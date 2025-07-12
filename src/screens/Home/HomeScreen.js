@@ -6,20 +6,21 @@ import {
   SafeAreaView,
   ScrollView,
 } from "react-native";
-import React from "react";
+import React, { useState } from "react";
 import HomeHeader from "./HomeHeader";
 import HomeFilter from "./HomeFilter";
 import PopularProducts from "./PopularProducts";
 import NewArrivals from "./NewArrivals";
 
 export default function HomeScreen({ navigation }) {
+  const [searchText, setSearchText] = useState("");
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
-        <HomeHeader />
+        <HomeHeader navigation={navigation} onSearchChange={setSearchText} />
         <HomeFilter />
-        <PopularProducts navigation={navigation} />
-        <NewArrivals navigation={navigation} />
+        <PopularProducts navigation={navigation} searchText={searchText} />
+        <NewArrivals navigation={navigation} searchText={searchText} />
       </ScrollView>
     </SafeAreaView>
   );

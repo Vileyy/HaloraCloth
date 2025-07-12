@@ -13,7 +13,11 @@ import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../services/firebase";
 import { useDispatch } from "react-redux";
-import { setUserInfo } from "../../redux/slices/userSlice";
+import {
+  setUserInfo,
+  saveUserAsync,
+  fetchUserAsync,
+} from "../../redux/slices/userSlice";
 
 const { width } = Dimensions.get("window");
 
@@ -38,10 +42,21 @@ export default function LoginScreen({ navigation }) {
         password
       );
       const user = userCredential.user;
-      dispatch(setUserInfo({ email: user.email, uid: user.uid }));
+
+      // Try to fetch existing user data from DB
+      try {
+        const userData = await dispatch(fetchUserAsync(user.uid)).unwrap();
+        // Set both auth info and database user data
+        dispatch(setUserInfo({ email: user.email, uid: user.uid }));
+      } catch (error) {
+        // If user doesn't exist in DB, save them
+        await dispatch(saveUserAsync(user)).unwrap();
+        dispatch(setUserInfo({ email: user.email, uid: user.uid }));
+      }
       Alert.alert("Thông báo", "Đăng nhập thành công");
       navigation.navigate("Home");
     } catch (error) {
+      console.error("Login error:", error);
       setError("Email hoặc mật khẩu không chính xác");
       Alert.alert("Lỗi", "Email hoặc mật khẩu không chính xác");
     } finally {

@@ -13,8 +13,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
 const { width } = Dimensions.get("window");
-
-const CARD_WIDTH = width * 0.42;
+const CARD_WIDTH = width * 0.48;
+const CARD_SPACING = 12;
 
 const ProductCard = ({ item, index, navigation }) => {
   const [scaleAnim] = useState(new Animated.Value(1));
@@ -23,7 +23,7 @@ const ProductCard = ({ item, index, navigation }) => {
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
-      toValue: 0.96,
+      toValue: 0.98,
       useNativeDriver: true,
     }).start();
   };
@@ -45,7 +45,7 @@ const ProductCard = ({ item, index, navigation }) => {
     setLiked(!liked);
     Animated.sequence([
       Animated.spring(scaleAnim, {
-        toValue: 1.05,
+        toValue: 1.02,
         duration: 100,
         useNativeDriver: true,
       }),
@@ -57,50 +57,58 @@ const ProductCard = ({ item, index, navigation }) => {
     ]).start();
   };
 
-  const discountPercent = Math.round(
-    ((item.originalPrice - item.price) / item.originalPrice) * 100
-  );
+  const discountPercent = item.originalPrice
+    ? Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)
+    : 0;
 
   return (
-    <View style={styles.cardShadow}>
-      <Animated.View
-        style={[
-          styles.productCard,
-          {
-            transform: [{ scale: scaleAnim }],
-            marginLeft: index === 0 ? 16 : 0,
-          },
-        ]}
+    <Animated.View
+      style={[
+        styles.productCard,
+        {
+          transform: [{ scale: scaleAnim }],
+          marginLeft: index === 0 ? 16 : CARD_SPACING,
+        },
+      ]}
+    >
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={handleCardPress}
+        style={styles.cardTouchable}
       >
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          onPress={handleCardPress}
-          style={styles.cardContent}
-        >
-          {/* Heart Button */}
-          <TouchableOpacity
-            style={styles.heartBtn}
-            onPress={toggleLike}
-            activeOpacity={0.7}
-          >
-            <View style={styles.heartBg}>
+        {/* Image Section */}
+        <View style={styles.imageSection}>
+          <Image source={item.image} style={styles.productImage} />
+
+          {/* Overlays */}
+          <LinearGradient
+            colors={["transparent", "rgba(0,0,0,0.05)"]}
+            style={styles.imageGradient}
+          />
+
+          {/* Top Row Badges */}
+          <View style={styles.topRow}>
+            {item.isPopular && (
+              <View style={styles.popularBadge}>
+                <Ionicons name="flame" size={12} color="#fff" />
+                <Text style={styles.popularText}>HOT</Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={styles.heartButton}
+              onPress={toggleLike}
+              activeOpacity={0.7}
+            >
               <Ionicons
                 name={liked ? "heart" : "heart-outline"}
-                size={16}
-                color={liked ? "#FF4757" : "#95a5a6"}
+                size={18}
+                color={liked ? "#FF4458" : "#2c3e50"}
               />
-            </View>
-          </TouchableOpacity>
-
-          {/* Popular Badge */}
-          {item.isPopular && (
-            <View style={styles.popularBadge}>
-              <Ionicons name="trending-up" size={10} color="#fff" />
-              <Text style={styles.popularText}>Popular</Text>
-            </View>
-          )}
+            </TouchableOpacity>
+          </View>
 
           {/* Discount Badge */}
           {discountPercent > 0 && (
@@ -108,79 +116,84 @@ const ProductCard = ({ item, index, navigation }) => {
               <Text style={styles.discountText}>-{discountPercent}%</Text>
             </View>
           )}
+        </View>
 
-          {/* Product Image */}
-          <View style={styles.imageContainer}>
-            <Image source={item.image} style={styles.productImage} />
-            <LinearGradient
-              colors={["transparent", "rgba(0,0,0,0.05)"]}
-              style={styles.imageOverlay}
-            />
+        {/* Content Section */}
+        <View style={styles.contentSection}>
+          {/* Brand */}
+          <Text style={styles.brand}>
+            {item.brand?.toUpperCase() || "NO BRAND"}
+          </Text>
+
+          {/* Product Name */}
+          <Text style={styles.productName} numberOfLines={2}>
+            {item.name}
+          </Text>
+
+          {/* Rating */}
+          <View style={styles.ratingRow}>
+            <View style={styles.stars}>
+              {[...Array(5)].map((_, i) => (
+                <Ionicons
+                  key={i}
+                  name="star"
+                  size={10}
+                  color={i < Math.floor(item.rating) ? "#FFC107" : "#E0E0E0"}
+                />
+              ))}
+            </View>
+            <Text style={styles.ratingValue}>{item.rating}</Text>
+            <Text style={styles.reviewCount}>({item.reviews})</Text>
           </View>
 
-          {/* Product Info */}
-          <View style={styles.productInfo}>
-            <Text style={styles.productName} numberOfLines={2}>
-              {item.name}
-            </Text>
-            {/* Price */}
-            <View style={styles.priceRow}>
-              <Text style={styles.currentPrice}>${item.price}</Text>
+          {/* Color Options */}
+          {item.colors && item.colors.length > 0 && (
+            <View style={styles.colorRow}>
+              {item.colors.map((color, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  onPress={() => setSelectedColor(idx)}
+                  style={[
+                    styles.colorOption,
+                    { backgroundColor: color },
+                    selectedColor === idx && styles.selectedColorOption,
+                  ]}
+                />
+              ))}
+            </View>
+          )}
+
+          {/* Price & Button Row */}
+          <View style={styles.bottomRow}>
+            <View style={styles.priceGroup}>
+              <Text style={styles.price}>${item.price}</Text>
               {item.originalPrice && (
                 <Text style={styles.originalPrice}>${item.originalPrice}</Text>
               )}
             </View>
-            {/* Rating */}
-            <View style={styles.ratingContainer}>
-              <View style={styles.starsContainer}>
-                {[...Array(5)].map((_, i) => (
-                  <Ionicons
-                    key={i}
-                    name={i < Math.floor(item.rating) ? "star" : "star-outline"}
-                    size={12}
-                    color="#FFD700"
-                  />
-                ))}
-              </View>
-              <Text style={styles.ratingText}>
-                {item.rating} ({item.reviews})
-              </Text>
-            </View>
-            {/* Color Options */}
-            <View style={styles.colorContainer}>
-              {item.colors.map((color, colorIndex) => (
-                <TouchableOpacity
-                  key={colorIndex}
-                  style={[
-                    styles.colorDot,
-                    { backgroundColor: color },
-                    selectedColor === colorIndex && styles.selectedColor,
-                  ]}
-                  onPress={() => setSelectedColor(colorIndex)}
-                />
-              ))}
-            </View>
-          </View>
 
-          {/* Buy Button */}
-          <TouchableOpacity style={styles.buyBtn} activeOpacity={0.8}>
-            <LinearGradient
-              colors={["#667eea", "#764ba2"]}
-              style={styles.buyBtnGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="bag-add" size={16} color="#fff" />
-              <Text style={styles.buyBtnText}>Buy Now</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Animated.View>
-    </View>
+            <TouchableOpacity style={styles.addButton} activeOpacity={0.8}>
+              <LinearGradient
+                colors={["#667eea", "#764ba2"]}
+                style={styles.addButtonGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Ionicons name="add" size={20} color="#fff" />
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
-export default function PopularProducts({ onSeeAll, navigation }) {
+export default function PopularProducts({
+  onSeeAll,
+  navigation,
+  searchText = "",
+}) {
   const [headerAnim] = useState(new Animated.Value(0));
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -188,7 +201,7 @@ export default function PopularProducts({ onSeeAll, navigation }) {
   useEffect(() => {
     Animated.timing(headerAnim, {
       toValue: 1,
-      duration: 800,
+      duration: 600,
       useNativeDriver: true,
     }).start();
   }, []);
@@ -198,18 +211,18 @@ export default function PopularProducts({ onSeeAll, navigation }) {
       try {
         const res = await fetch("https://dummyjson.com/products?limit=10");
         const data = await res.json();
-        // Map lại dữ liệu cho phù hợp với UI
         const mapped = data.products.map((item) => ({
           id: item.id.toString(),
           name: item.title,
           price: item.price,
-          originalPrice: item.price + Math.round(item.price * 0.2), // giả lập giá gốc cao hơn 20%
+          originalPrice: item.price + Math.round(item.price * 0.2),
           image: { uri: item.thumbnail },
-          colors: ["#8B9DC3", "#E8E8E8"], // Dummy màu
-          sizes: ["M", "L", "XL"], // Dummy size
+          colors: ["#3498db", "#e74c3c", "#2ecc71"],
           rating: item.rating,
-          reviews: item.stock, // dùng stock làm số review demo
+          reviews: item.stock,
           isPopular: item.rating > 4.5,
+          brand: item.brand || "No Brand",
+          description: item.description || "",
         }));
         setProducts(mapped);
       } catch (e) {
@@ -221,60 +234,60 @@ export default function PopularProducts({ onSeeAll, navigation }) {
     fetchProducts();
   }, []);
 
+  // Lọc sản phẩm theo searchText
+  const filteredProducts = products.filter(
+    (item) =>
+      item.name.toLowerCase().includes(searchText.toLowerCase()) ||
+      (item.description &&
+        item.description.toLowerCase().includes(searchText.toLowerCase()))
+  );
+
   if (loading) {
     return (
-      <View style={{ padding: 24 }}>
-        <Text>Loading...</Text>
+      <View style={styles.loadingContainer}>
+        <View style={styles.loadingDot} />
+        <View style={[styles.loadingDot, { animationDelay: "0.2s" }]} />
+        <View style={[styles.loadingDot, { animationDelay: "0.4s" }]} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Section Header */}
       <Animated.View
         style={[
-          styles.header,
+          styles.sectionHeader,
           {
             opacity: headerAnim,
             transform: [
               {
                 translateY: headerAnim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [-20, 0],
+                  outputRange: [20, 0],
                 }),
               },
             ],
           },
         ]}
       >
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>Popular</Text>
-          <Text style={styles.subtitle}>Most loved by customers</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.seeAllBtn}
-          onPress={onSeeAll}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.seeAllText}>See all</Text>
-          <Ionicons name="chevron-forward" size={16} color="#667eea" />
-        </TouchableOpacity>
+        <Text style={styles.sectionTitle}>Sản phẩm phổ biến</Text>
+        {onSeeAll && (
+          <TouchableOpacity onPress={onSeeAll}>
+            <Text style={styles.seeAll}>Xem tất cả</Text>
+          </TouchableOpacity>
+        )}
       </Animated.View>
-
-      {/* Products List */}
+      {/* Product List */}
       <FlatList
-        data={products}
+        data={filteredProducts}
         keyExtractor={(item) => item.id}
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
         renderItem={({ item, index }) => (
           <ProductCard item={item} index={index} navigation={navigation} />
         )}
-        snapToInterval={CARD_WIDTH + 20}
-        decelerationRate="fast"
-        snapToAlignment="start"
+        contentContainerStyle={{ paddingRight: 16 }}
       />
     </View>
   );
@@ -283,226 +296,242 @@ export default function PopularProducts({ onSeeAll, navigation }) {
 const styles = StyleSheet.create({
   container: {
     marginTop: 24,
-    marginBottom: 16,
+    marginBottom: 24,
   },
-  header: {
+
+  // Loading
+  loadingContainer: {
     flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    marginBottom: 20,
-    paddingHorizontal: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 80,
+    gap: 8,
   },
-  titleContainer: {
+  loadingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#667eea",
+    opacity: 0.3,
+  },
+
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    marginBottom: 20,
+  },
+  headerLeft: {
     flex: 1,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "800",
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: "700",
     color: "#1a1a1a",
     letterSpacing: -0.5,
     marginBottom: 4,
   },
-  subtitle: {
+  sectionSubtitle: {
     fontSize: 14,
-    color: "#7f8c8d",
-    fontWeight: "500",
+    color: "#8e8e93",
+    fontWeight: "400",
   },
-  seeAllBtn: {
+  viewAllButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(102, 126, 234, 0.1)",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    gap: 8,
   },
-  seeAllText: {
-    color: "#667eea",
+  viewAllText: {
     fontSize: 14,
+    color: "#667eea",
     fontWeight: "600",
-    marginRight: 4,
   },
-  listContent: {
-    paddingRight: 16,
-  },
-  cardShadow: {
-    width: CARD_WIDTH,
-    marginRight: 20,
-    borderRadius: 24,
-    marginBottom: 10,
-    marginLeft: 10,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  productCard: {
-    flex: 1,
-    borderRadius: 24,
-    paddingBottom: 10,
-    overflow: "hidden",
-    backgroundColor: "#fff",
-  },
-  cardContent: {
-    padding: 16,
-    position: "relative",
-  },
-  heartBtn: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    zIndex: 2,
-  },
-  heartBg: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.9)",
+  viewAllIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(102, 126, 234, 0.1)",
     alignItems: "center",
     justifyContent: "center",
-    elevation: 2,
+  },
+
+  // Product List
+  productsList: {
+    paddingRight: 16,
+  },
+
+  // Product Card
+  productCard: {
+    width: CARD_WIDTH,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  cardTouchable: {
+    flex: 1,
+  },
+
+  // Image Section
+  imageSection: {
+    position: "relative",
+    height: 180,
+    backgroundColor: "#f8f9fa",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    overflow: "hidden",
+  },
+  productImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  imageGradient: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 60,
+  },
+  topRow: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    right: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  popularBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FF4458",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  popularText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  heartButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    alignItems: "center",
+    justifyContent: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  popularBadge: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    backgroundColor: "#FF6B6B",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    zIndex: 2,
-  },
   discountBadge: {
     position: "absolute",
-    top: 12,
+    bottom: 12,
     left: 12,
-    backgroundColor: "#e74c3c",
-    paddingHorizontal: 8,
+    backgroundColor: "#2ecc71",
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
-    zIndex: 2,
+    borderRadius: 8,
   },
   discountText: {
     color: "#fff",
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "700",
+  },
+
+  // Content Section
+  contentSection: {
+    padding: 16,
+  },
+  brand: {
+    fontSize: 11,
+    color: "#8e8e93",
+    fontWeight: "600",
     letterSpacing: 0.5,
-    textTransform: "uppercase",
-  },
-  popularText: {
-    color: "#fff",
-    fontSize: 9,
-    fontWeight: "700",
-    marginLeft: 2,
-    textTransform: "uppercase",
-  },
-  imageContainer: {
-    position: "relative",
-    alignItems: "center",
-    marginBottom: 16,
-    marginTop: 8,
-  },
-  productImage: {
-    width: 110,
-    height: 110,
-    borderRadius: 20,
-    backgroundColor: "#f8f9fa",
-  },
-  imageOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 30,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
-  productInfo: {
-    alignItems: "flex-start",
-    marginBottom: 16,
+    marginBottom: 4,
   },
   productName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#2c3e50",
-    marginBottom: 8,
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#1a1a1a",
     lineHeight: 20,
-  },
-  priceRow: {
-    flexDirection: "row",
-    alignItems: "center",
     marginBottom: 8,
-    flexWrap: "wrap",
+    minHeight: 40,
   },
-  currentPrice: {
-    fontSize: 18,
-    color: "#27ae60",
-    fontWeight: "800",
-    marginRight: 8,
-  },
-  originalPrice: {
-    fontSize: 14,
-    color: "#95a5a6",
-    textDecorationLine: "line-through",
-    marginRight: 8,
-  },
-  ratingContainer: {
+  ratingRow: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 12,
   },
-  starsContainer: {
+  stars: {
     flexDirection: "row",
     marginRight: 6,
   },
-  ratingText: {
+  ratingValue: {
     fontSize: 12,
-    color: "#7f8c8d",
-    fontWeight: "500",
+    fontWeight: "600",
+    color: "#1a1a1a",
+    marginRight: 4,
   },
-  colorContainer: {
+  reviewCount: {
+    fontSize: 12,
+    color: "#8e8e93",
+  },
+  colorRow: {
     flexDirection: "row",
-    alignItems: "center",
+    gap: 6,
+    marginBottom: 16,
   },
-  colorDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    marginRight: 6,
+  colorOption: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  selectedColorOption: {
     borderWidth: 2,
-    borderColor: "transparent",
-  },
-  selectedColor: {
     borderColor: "#667eea",
-    borderWidth: 2,
   },
-  buyBtn: {
-    borderRadius: 16,
-    overflow: "hidden",
-    elevation: 4,
-    shadowColor: "#667eea",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  buyBtnGradient: {
+  bottomRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    justifyContent: "space-between",
+  },
+  priceGroup: {
+    flexDirection: "row",
+    alignItems: "baseline",
     gap: 8,
   },
-  buyBtnText: {
-    color: "#fff",
-    fontSize: 14,
+  price: {
+    fontSize: 20,
     fontWeight: "700",
+    color: "#1a1a1a",
+  },
+  originalPrice: {
+    fontSize: 14,
+    color: "#8e8e93",
+    textDecorationLine: "line-through",
+  },
+  addButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  addButtonGradient: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

@@ -13,6 +13,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
 const { width } = Dimensions.get("window");
+const CARD_WIDTH = width * 0.48;
+const CARD_SPACING = 12;
 
 const ProductCard = ({ item, index, navigation }) => {
   const [scaleAnim] = useState(new Animated.Value(1));
@@ -20,7 +22,7 @@ const ProductCard = ({ item, index, navigation }) => {
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
-      toValue: 0.97,
+      toValue: 0.98,
       useNativeDriver: true,
     }).start();
   };
@@ -54,13 +56,17 @@ const ProductCard = ({ item, index, navigation }) => {
     ]).start();
   };
 
+  const discountPercent = item.originalPrice
+    ? Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)
+    : item.discount;
+
   return (
     <Animated.View
       style={[
         styles.productCard,
         {
           transform: [{ scale: scaleAnim }],
-          marginLeft: index === 0 ? 16 : 0,
+          marginLeft: index === 0 ? 16 : CARD_SPACING,
         },
       ]}
     >
@@ -69,52 +75,67 @@ const ProductCard = ({ item, index, navigation }) => {
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         onPress={handleCardPress}
-        style={styles.cardContent}
+        style={styles.cardTouchable}
       >
-        {/* Top Section */}
-        <View style={styles.topSection}>
-          {/* Badge */}
-          {(item.isNew || item.isHot) && (
-            <View
-              style={[
-                styles.badge,
-                item.isNew ? styles.newBadge : styles.hotBadge,
-              ]}
+        {/* Image Section */}
+        <View style={styles.imageSection}>
+          <Image source={item.image} style={styles.productImage} />
+
+          {/* Overlays */}
+          <LinearGradient
+            colors={["transparent", "rgba(0,0,0,0.05)"]}
+            style={styles.imageGradient}
+          />
+
+          {/* Top Row Badges */}
+          <View style={styles.topRow}>
+            {(item.isNew || item.isHot) && (
+              <View
+                style={[
+                  styles.badge,
+                  item.isNew ? styles.newBadge : styles.hotBadge,
+                ]}
+              >
+                <Ionicons
+                  name={item.isNew ? "sparkles" : "flame"}
+                  size={12}
+                  color="#fff"
+                />
+                <Text style={styles.badgeText}>
+                  {item.isNew ? "NEW" : "HOT"}
+                </Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={styles.heartButton}
+              onPress={toggleLike}
+              activeOpacity={0.7}
             >
-              <Text style={styles.badgeText}>{item.isNew ? "NEW" : "HOT"}</Text>
+              <Ionicons
+                name={liked ? "heart" : "heart-outline"}
+                size={18}
+                color={liked ? "#FF4458" : "#2c3e50"}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Discount Badge */}
+          {discountPercent > 0 && (
+            <View style={styles.discountBadge}>
+              <Text style={styles.discountText}>-{discountPercent}%</Text>
             </View>
           )}
-
-          {/* Heart Icon */}
-          <TouchableOpacity
-            style={styles.heartBtn}
-            onPress={toggleLike}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={liked ? "heart" : "heart-outline"}
-              size={16}
-              color={liked ? "#FF4757" : "#bdc3c7"}
-            />
-          </TouchableOpacity>
         </View>
 
-        {/* Product Image */}
-        <View style={styles.imageContainer}>
-          <Image source={item.image} style={styles.productImage} />
-          <View style={styles.imageOverlay}>
-            <LinearGradient
-              colors={["transparent", "rgba(0,0,0,0.05)"]}
-              style={styles.gradient}
-            />
-          </View>
-        </View>
+        {/* Content Section */}
+        <View style={styles.contentSection}>
+          {/* Brand */}
+          <Text style={styles.brand}>
+            {item.brand?.toUpperCase() || "NO BRAND"}
+          </Text>
 
-        {/* Brand */}
-        <Text style={styles.brandText}>{item.brand}</Text>
-
-        {/* Product Info */}
-        <View style={styles.productInfo}>
+          {/* Product Name */}
           <Text style={styles.productName} numberOfLines={2}>
             {item.name}
           </Text>
@@ -122,55 +143,48 @@ const ProductCard = ({ item, index, navigation }) => {
           {/* Rating & Sold */}
           <View style={styles.statsRow}>
             <View style={styles.ratingContainer}>
-              <Ionicons name="star" size={12} color="#FFD700" />
-              <Text style={styles.ratingText}>{item.rating}</Text>
+              <Ionicons name="star" size={10} color="#FFC107" />
+              <Text style={styles.ratingValue}>{item.rating}</Text>
             </View>
-            <Text style={styles.soldText}>
-              Đã bán{" "}
-              {item.sold > 1000
-                ? `${(item.sold / 1000).toFixed(1)}k`
-                : item.sold}
-            </Text>
+            <View style={styles.soldContainer}>
+              <Ionicons name="bag-check" size={10} color="#8e8e93" />
+              <Text style={styles.soldText}>
+                {item.sold > 1000
+                  ? `${(item.sold / 1000).toFixed(1)}k`
+                  : item.sold}
+              </Text>
+            </View>
           </View>
 
-          {/* Price Section */}
-          <View style={styles.priceSection}>
-            <View style={styles.priceRow}>
-              <Text style={styles.currentPrice}>
-                ₫{item.price.toLocaleString()}
-              </Text>
+          {/* Price & Button Row */}
+          <View style={styles.bottomRow}>
+            <View style={styles.priceGroup}>
+              <Text style={styles.price}>₫{item.price.toLocaleString()}</Text>
               {item.originalPrice && (
                 <Text style={styles.originalPrice}>
                   ₫{item.originalPrice.toLocaleString()}
                 </Text>
               )}
             </View>
-            {item.discount && (
-              <View style={styles.discountBadge}>
-                <Text style={styles.discountText}>-{item.discount}%</Text>
-              </View>
-            )}
+
+            <TouchableOpacity style={styles.addButton} activeOpacity={0.8}>
+              <LinearGradient
+                colors={["#667eea", "#764ba2"]}
+                style={styles.addButtonGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Ionicons name="add" size={20} color="#fff" />
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
         </View>
-
-        {/* Add to Cart Button */}
-        <TouchableOpacity style={styles.addBtn} activeOpacity={0.8}>
-          <LinearGradient
-            colors={["#FF6B6B", "#FF8E8E"]}
-            style={styles.addBtnGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <Ionicons name="bag-add-outline" size={14} color="#fff" />
-            <Text style={styles.addBtnText}>Thêm</Text>
-          </LinearGradient>
-        </TouchableOpacity>
       </TouchableOpacity>
     </Animated.View>
   );
 };
 
-export default function NewArrivals({ onSeeAll, navigation }) {
+export default function NewArrivals({ onSeeAll, navigation, searchText = "" }) {
   const [headerAnim] = useState(new Animated.Value(0));
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -190,20 +204,19 @@ export default function NewArrivals({ onSeeAll, navigation }) {
           "https://dummyjson.com/products?limit=10&skip=10"
         );
         const data = await res.json();
-        // Map lại dữ liệu cho phù hợp với UI
         const mapped = data.products.map((item) => ({
           id: item.id.toString(),
           name: item.title,
-          price: item.price,
-          originalPrice: item.price + Math.round(item.price * 0.15), // giả lập giá gốc cao hơn 15%
+          price: item.price * 23000, // Convert to VND
+          originalPrice: (item.price + Math.round(item.price * 0.15)) * 23000,
           discount: item.discountPercentage
             ? Math.round(item.discountPercentage)
             : 10,
           image: { uri: item.thumbnail },
-          isNew: item.rating > 4.5, // Giả lập hàng mới về nếu rating cao
-          isHot: item.stock > 50, // Giả lập hot nếu stock lớn
+          isNew: item.rating > 4.5,
+          isHot: item.stock > 50,
           rating: item.rating,
-          sold: item.stock, // dùng stock làm số lượng bán demo
+          sold: item.stock * 10, // Simulate sold count
           brand: item.brand || "No Brand",
           description: item.description,
         }));
@@ -217,60 +230,60 @@ export default function NewArrivals({ onSeeAll, navigation }) {
     fetchProducts();
   }, []);
 
+  // Lọc sản phẩm theo searchText
+  const filteredProducts = products.filter(
+    (item) =>
+      item.name.toLowerCase().includes(searchText.toLowerCase()) ||
+      (item.description &&
+        item.description.toLowerCase().includes(searchText.toLowerCase()))
+  );
+
   if (loading) {
     return (
-      <View style={{ padding: 24 }}>
-        <Text>Loading...</Text>
+      <View style={styles.loadingContainer}>
+        <View style={styles.loadingDot} />
+        <View style={[styles.loadingDot, { animationDelay: "0.2s" }]} />
+        <View style={[styles.loadingDot, { animationDelay: "0.4s" }]} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Section Header */}
       <Animated.View
         style={[
-          styles.header,
+          styles.sectionHeader,
           {
             opacity: headerAnim,
             transform: [
               {
                 translateY: headerAnim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [-15, 0],
+                  outputRange: [20, 0],
                 }),
               },
             ],
           },
         ]}
       >
-        <View style={styles.titleSection}>
-          <Text style={styles.title}>Hàng mới về</Text>
-          <Text style={styles.subtitle}>Cập nhật xu hướng mới nhất</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.seeAllBtn}
-          onPress={onSeeAll}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.seeAllText}>Xem tất cả</Text>
-          <Ionicons name="chevron-forward" size={14} color="#FF6B6B" />
-        </TouchableOpacity>
+        <Text style={styles.sectionTitle}>Hàng mới về</Text>
+        {onSeeAll && (
+          <TouchableOpacity onPress={onSeeAll}>
+            <Text style={styles.seeAll}>Xem tất cả</Text>
+          </TouchableOpacity>
+        )}
       </Animated.View>
-
-      {/* Products List */}
+      {/* Product List */}
       <FlatList
-        data={products}
+        data={filteredProducts}
         keyExtractor={(item) => item.id}
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
         renderItem={({ item, index }) => (
           <ProductCard item={item} index={index} navigation={navigation} />
         )}
-        snapToInterval={width * 0.45}
-        decelerationRate="fast"
-        snapToAlignment="start"
+        contentContainerStyle={{ paddingRight: 16 }}
       />
     </View>
   );
@@ -278,216 +291,238 @@ export default function NewArrivals({ onSeeAll, navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 10,
-    marginBottom: 10,
+    marginTop: 24,
+    marginBottom: 24,
   },
-  header: {
+
+  // Loading
+  loadingContainer: {
     flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    marginBottom: 18,
-    paddingHorizontal: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 80,
+    gap: 8,
   },
-  titleSection: {
+  loadingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#667eea",
+    opacity: 0.3,
+  },
+
+  // Header
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    marginBottom: 20,
+  },
+  headerLeft: {
     flex: 1,
   },
-  title: {
-    fontSize: 22,
+  sectionTitle: {
+    fontSize: 24,
     fontWeight: "700",
-    color: "#2c3e50",
-    marginBottom: 2,
+    color: "#1a1a1a",
+    letterSpacing: -0.5,
+    marginBottom: 4,
   },
-  subtitle: {
-    fontSize: 13,
-    color: "#7f8c8d",
-    fontWeight: "500",
+  sectionSubtitle: {
+    fontSize: 14,
+    color: "#8e8e93",
+    fontWeight: "400",
   },
-  seeAllBtn: {
+  viewAllButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 107, 107, 0.1)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    gap: 8,
   },
-  seeAllText: {
-    color: "#FF6B6B",
-    fontSize: 13,
+  viewAllText: {
+    fontSize: 14,
+    color: "#667eea",
     fontWeight: "600",
-    marginRight: 4,
   },
-  listContent: {
-    paddingRight: 16,
-  },
-  productCard: {
-    width: width * 0.44,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    marginRight: 12,
-    marginBottom: 50,
-    overflow: "hidden",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    borderWidth: 0.5,
-    borderColor: "#f1f2f6",
-  },
-  cardContent: {
-    padding: 12,
-    position: "relative",
-  },
-  topSection: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 8,
-  },
-  badge: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 8,
-    alignSelf: "flex-start",
-  },
-  newBadge: {
-    backgroundColor: "#27ae60",
-  },
-  hotBadge: {
-    backgroundColor: "#e74c3c",
-  },
-  badgeText: {
-    color: "#fff",
-    fontSize: 9,
-    fontWeight: "700",
-    letterSpacing: 0.3,
-  },
-  heartBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#f8f9fa",
+  viewAllIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(102, 126, 234, 0.1)",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#ecf0f1",
   },
-  imageContainer: {
+
+  // Product List
+  productsList: {
+    paddingRight: 16,
+  },
+
+  // Product Card
+  productCard: {
+    width: CARD_WIDTH,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  cardTouchable: {
+    flex: 1,
+  },
+
+  // Image Section
+  imageSection: {
     position: "relative",
-    alignItems: "center",
-    marginBottom: 10,
+    height: 180,
+    backgroundColor: "#f8f9fa",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    overflow: "hidden",
   },
   productImage: {
     width: "100%",
-    height: 120,
-    borderRadius: 12,
-    backgroundColor: "#f8f9fa",
+    height: "100%",
+    resizeMode: "cover",
   },
-  imageOverlay: {
+  imageGradient: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    height: 30,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
+    height: 60,
   },
-  gradient: {
-    flex: 1,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
+  topRow: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    right: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
-  brandText: {
+  badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  newBadge: {
+    backgroundColor: "#2ecc71",
+  },
+  hotBadge: {
+    backgroundColor: "#FF4458",
+  },
+  badgeText: {
+    color: "#fff",
     fontSize: 11,
-    color: "#95a5a6",
-    fontWeight: "500",
-    marginBottom: 4,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    fontWeight: "700",
   },
-  productInfo: {
-    marginBottom: 12,
+  heartButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  discountBadge: {
+    position: "absolute",
+    bottom: 12,
+    left: 12,
+    backgroundColor: "#e74c3c",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  discountText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+
+  // Content Section
+  contentSection: {
+    padding: 16,
+  },
+  brand: {
+    fontSize: 11,
+    color: "#8e8e93",
+    fontWeight: "600",
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
   productName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
-    color: "#2c3e50",
-    marginBottom: 6,
-    lineHeight: 18,
+    color: "#1a1a1a",
+    lineHeight: 20,
+    marginBottom: 8,
+    minHeight: 40,
   },
   statsRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
+    gap: 16,
+    marginBottom: 16,
   },
   ratingContainer: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 4,
   },
-  ratingText: {
+  ratingValue: {
     fontSize: 12,
-    color: "#7f8c8d",
-    fontWeight: "500",
-    marginLeft: 3,
+    fontWeight: "600",
+    color: "#1a1a1a",
+  },
+  soldContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   soldText: {
-    fontSize: 11,
-    color: "#95a5a6",
-    fontWeight: "500",
+    fontSize: 12,
+    color: "#8e8e93",
   },
-  priceSection: {
+  bottomRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  priceRow: {
+  priceGroup: {
     flexDirection: "column",
-    alignItems: "flex-start",
+    gap: 2,
   },
-  currentPrice: {
-    fontSize: 16,
-    color: "#e74c3c",
+  price: {
+    fontSize: 18,
     fontWeight: "700",
-    marginBottom: 2,
+    color: "#1a1a1a",
   },
   originalPrice: {
-    fontSize: 12,
-    color: "#bdc3c7",
+    fontSize: 13,
+    color: "#8e8e93",
     textDecorationLine: "line-through",
-    fontWeight: "500",
   },
-  discountBadge: {
-    backgroundColor: "#e74c3c",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  discountText: {
-    color: "#fff",
-    fontSize: 10,
-    fontWeight: "600",
-  },
-  addBtn: {
-    borderRadius: 12,
+  addButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     overflow: "hidden",
-    elevation: 2,
-    shadowColor: "#FF6B6B",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
   },
-  addBtnGradient: {
-    flexDirection: "row",
+  addButtonGradient: {
+    width: "100%",
+    height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    gap: 4,
-  },
-  addBtnText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
   },
 });

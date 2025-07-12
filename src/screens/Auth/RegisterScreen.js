@@ -12,10 +12,13 @@ import {
 } from "react-native";
 import { useState } from "react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { ref, set } from "firebase/database";
-import { auth, database } from "../../services/firebase";
+import { auth } from "../../services/firebase";
 import { useDispatch } from "react-redux";
-import { setUserInfo } from "../../redux/slices/userSlice";
+import {
+  setUserInfo,
+  saveUserAsync,
+  fetchUserAsync,
+} from "../../redux/slices/userSlice";
 
 const { width } = Dimensions.get("window");
 
@@ -66,18 +69,14 @@ export default function RegisterScreen({ navigation }) {
       });
 
       // Lưu thông tin user vào Realtime Database
-      const userRef = ref(database, "users/" + user.uid);
-      await set(userRef, {
-        displayName: displayName,
-        email: user.email,
-        createdAt: new Date().toISOString(),
-        lastLogin: new Date().toISOString(),
-        phoneNumber: null,
-        address: null,
-        avatar: null,
-        role: "user",
-        status: "active",
-      });
+      await dispatch(saveUserAsync(user)).unwrap();
+
+      // Fetch user data from database to get the complete user info
+      try {
+        await dispatch(fetchUserAsync(user.uid)).unwrap();
+      } catch (error) {
+        console.log("Error fetching user data after registration:", error);
+      }
 
       dispatch(
         setUserInfo({
@@ -91,6 +90,7 @@ export default function RegisterScreen({ navigation }) {
         { text: "OK", onPress: () => navigation.navigate("Login") },
       ]);
     } catch (error) {
+      console.error("Register error:", error);
       let errorMessage = "Đã có lỗi xảy ra";
       if (error.code === "auth/email-already-in-use") {
         errorMessage = "Email này đã được sử dụng";

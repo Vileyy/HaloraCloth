@@ -11,16 +11,49 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useRef, useEffect } from "react";
+import { useSelector } from "react-redux";
 
 const { width } = Dimensions.get("window");
 
-export default function HomeHeader() {
+export default function HomeHeader({ navigation, onSearchChange }) {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [searchText, setSearchText] = useState("");
   const searchAnimation = useRef(new Animated.Value(0)).current;
   const pulseAnimation = useRef(new Animated.Value(1)).current;
 
+  // Get user info and cart data from Redux
+  const user = useSelector((state) => state.user.userInfo);
+  const cartItems = useSelector((state) => state.cart.items);
+  const userData = useSelector((state) => state.user.userData);
+
+  // Calculate cart item count
+  const cartItemCount = cartItems.reduce(
+    (count, item) => count + item.quantity,
+    0
+  );
+
+  // Get user display name from database or fallback
+  const getUserDisplayName = () => {
+    if (userData?.displayName) {
+      return userData.displayName;
+    }
+    if (user?.displayName) {
+      return user.displayName;
+    } else if (user?.email) {
+      return user.email.split("@")[0];
+    }
+    return "Khách";
+  };
+
+  // Get greeting based on time
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Chào buổi sáng";
+    if (hour < 17) return "Chào buổi chiều";
+    return "Chào buổi tối";
+  };
+
   useEffect(() => {
-    // Pulse animation for notification badge
     const pulse = () => {
       Animated.sequence([
         Animated.timing(pulseAnimation, {
@@ -82,33 +115,57 @@ export default function HomeHeader() {
       {/* Header Section */}
       <View style={styles.container}>
         <View style={styles.leftSection}>
-          <View style={styles.userIconContainer}>
-            <Image
-              source={require("../../assets/images/UserIcon.png")}
-              style={styles.userIcon}
-            />
-          </View>
-          <View style={styles.userInfo}>
-            <Text style={styles.greeting}>Have a nice day </Text>
-            <Text style={styles.userName}>Viley</Text>
-          </View>
+          <TouchableOpacity
+            style={styles.userSection}
+            onPress={() => {
+              if (!user) {
+                navigation.navigate("Login");
+              } else {
+                navigation.navigate("Profile");
+              }
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={styles.userIconContainer}>
+              <Image
+                source={require("../../assets/images/UserIcon.png")}
+                style={styles.userIcon}
+              />
+            </View>
+            <View style={styles.userInfo}>
+              <Text style={styles.greeting}>{getGreeting()}</Text>
+              <Text style={styles.userName}>{getUserDisplayName()}</Text>
+              {!user && (
+                <Text style={styles.loginHint}>Đăng nhập để mua sắm</Text>
+              )}
+            </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.rightSection}>
           <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
             <Ionicons name="notifications-outline" size={24} color="#374151" />
+            {/* You can add real notification count here later */}
             <Animated.View
               style={[styles.badge, { transform: [{ scale: pulseAnimation }] }]}
             >
-              <Text style={styles.badgeText}>3</Text>
+              <Text style={styles.badgeText}>0</Text>
             </Animated.View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate("Cart")}
+          >
             <Ionicons name="bag-outline" size={24} color="#374151" />
-            <View style={styles.smallBadge}>
-              <Text style={styles.smallBadgeText}>2</Text>
-            </View>
+            {cartItemCount > 0 && (
+              <View style={styles.smallBadge}>
+                <Text style={styles.smallBadgeText}>
+                  {cartItemCount > 99 ? "99+" : cartItemCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -129,9 +186,21 @@ export default function HomeHeader() {
             style={styles.searchInput}
             onFocus={handleSearchFocus}
             onBlur={handleSearchBlur}
+            value={searchText}
+            onChangeText={(text) => {
+              setSearchText(text);
+              if (onSearchChange) onSearchChange(text);
+            }}
           />
-          {isSearchFocused && (
-            <TouchableOpacity style={styles.clearButton} activeOpacity={0.7}>
+          {isSearchFocused && searchText.length > 0 && (
+            <TouchableOpacity
+              style={styles.clearButton}
+              activeOpacity={0.7}
+              onPress={() => {
+                setSearchText("");
+                if (onSearchChange) onSearchChange("");
+              }}
+            >
               <Ionicons name="close-circle" size={18} color="#9ca3af" />
             </TouchableOpacity>
           )}
@@ -165,6 +234,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
   },
+  userSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
   rightSection: {
     flexDirection: "row",
     alignItems: "center",
@@ -194,6 +268,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: "#111827",
+    marginTop: 2,
+  },
+  loginHint: {
+    fontSize: 12,
+    color: "#667eea",
+    fontWeight: "500",
     marginTop: 2,
   },
   iconButton: {

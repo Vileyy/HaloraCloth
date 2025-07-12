@@ -1,6 +1,7 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { View, Text, TouchableOpacity, Platform, Animated } from "react-native";
+import { useSelector } from "react-redux";
 import HomeScreen from "../screens/Home/HomeScreen";
 import CartScreen from "../screens/Cart/CartScreen";
 import ProfileScreen from "../screens/Profile/ProfileScreen";
@@ -25,6 +26,12 @@ const TAB_LABELS = {
 };
 
 const CustomTabBar = ({ state, descriptors, navigation }) => {
+  const cartItems = useSelector((state) => state.cart.items);
+  const cartItemCount = cartItems.reduce(
+    (count, item) => count + item.quantity,
+    0
+  );
+
   return (
     <View
       style={{
@@ -41,7 +48,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
           flexDirection: "row",
           backgroundColor: "#fff",
           borderRadius: 32,
-        
+
           marginHorizontal: 24,
           marginBottom: Platform.OS === "ios" ? 12 : 8,
           elevation: 10,
@@ -91,6 +98,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
                 flex: 1,
                 alignItems: "center",
                 justifyContent: "center",
+                position: "relative",
               }}
               activeOpacity={0.8}
             >
@@ -104,6 +112,32 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
                   size={28}
                   color={isFocused ? "#667eea" : "#b0b0b0"}
                 />
+                {route.name === "Cart" && cartItemCount > 0 && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: -8,
+                      right: -8,
+                      backgroundColor: "#FF4458",
+                      borderRadius: 10,
+                      minWidth: 20,
+                      height: 20,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      paddingHorizontal: 4,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "#fff",
+                        fontSize: 10,
+                        fontWeight: "700",
+                      }}
+                    >
+                      {cartItemCount > 99 ? "99+" : cartItemCount}
+                    </Text>
+                  </View>
+                )}
               </Animated.View>
               <Text
                 style={{
