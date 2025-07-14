@@ -6,8 +6,8 @@ import {
 } from "../../services/firebase";
 
 const initialState = {
-  userInfo: null, 
-  userData: null, 
+  userInfo: null,
+  userData: null,
   loading: false,
   error: null,
 };
@@ -79,7 +79,14 @@ const userSlice = createSlice({
       })
       .addCase(saveUserAsync.fulfilled, (state, action) => {
         state.loading = false;
-        state.userInfo = action.payload;
+        // Chỉ lưu các trường đơn giản
+        const user = action.payload;
+        state.userInfo = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName || "",
+          photoURL: user.photoURL || "",
+        };
       })
       .addCase(saveUserAsync.rejected, (state, action) => {
         state.loading = false;
@@ -107,7 +114,14 @@ const userSlice = createSlice({
       })
       .addCase(fetchUserAsync.fulfilled, (state, action) => {
         state.loading = false;
-        state.userData = action.payload; // Store database user data
+        // Chỉ lưu các trường đơn giản
+        const user = action.payload;
+        state.userData = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName || "",
+          photoURL: user.photoURL || "",
+        };
       })
       .addCase(fetchUserAsync.rejected, (state, action) => {
         state.loading = false;

@@ -261,7 +261,6 @@ export default function ProductDetailScreen({ route, navigation }) {
             </View>
           )}
 
-          {/* Image Dots */}
           <View style={styles.imageDots}>
             {[1, 2, 3, 4].map((_, index) => (
               <View
@@ -274,7 +273,7 @@ export default function ProductDetailScreen({ route, navigation }) {
 
         {/* Product Info */}
         <View style={styles.contentContainer}>
-          {/* Brand & Name */}
+          {/* Brand and Name */}
           <View style={styles.titleSection}>
             <Text style={styles.brand}>
               {product.brand?.toUpperCase() || "PREMIUM BRAND"}
@@ -282,7 +281,7 @@ export default function ProductDetailScreen({ route, navigation }) {
             <Text style={styles.productName}>{product.name}</Text>
           </View>
 
-          {/* Rating & Reviews */}
+          {/* Rating and Reviews */}
           <View style={styles.ratingSection}>
             <View style={styles.ratingBox}>
               <Ionicons name="star" size={16} color="#FFC107" />

@@ -13,7 +13,7 @@ const initialState = {
   error: null,
 };
 
-// Async thunks
+// Async 
 export const fetchCartItems = createAsyncThunk(
   "cart/fetchCartItems",
   async (userId) => {
@@ -131,7 +131,6 @@ const cartSlice = createSlice({
           if (action.payload.updated) {
             existingItem.quantity += action.payload.quantity;
           } else {
-            // fallback: update all fields if needed
             Object.assign(existingItem, action.payload);
           }
         } else {

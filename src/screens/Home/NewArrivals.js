@@ -294,8 +294,6 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 24,
   },
-
-  // Loading
   loadingContainer: {
     flexDirection: "row",
     justifyContent: "center",
@@ -310,8 +308,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#667eea",
     opacity: 0.3,
   },
-
-  // Header
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -352,13 +348,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
-  // Product List
   productsList: {
     paddingRight: 16,
   },
-
-  // Product Card
   productCard: {
     width: CARD_WIDTH,
     backgroundColor: "#fff",
@@ -373,8 +365,6 @@ const styles = StyleSheet.create({
   cardTouchable: {
     flex: 1,
   },
-
-  // Image Section
   imageSection: {
     position: "relative",
     height: 180,
@@ -449,8 +439,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
-
-  // Content Section
   contentSection: {
     padding: 16,
   },
